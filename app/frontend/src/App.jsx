@@ -11,9 +11,6 @@ export default function App() {
         <nav>
           <Link to="/">Solver</Link>
           <Link to="/learn">Learn</Link>
-          <a href="https://github.com/piyush932/Rubiks-Cube-Solver-Using-Korfs-IDA-Algo" target="_blank" rel="noreferrer">
-            Algorithm Repo
-          </a>
         </nav>
       </header>
 

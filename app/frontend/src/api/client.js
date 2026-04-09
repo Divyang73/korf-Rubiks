@@ -4,7 +4,7 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL || ''
 
 const http = axios.create({
   baseURL: BASE_URL,
-  timeout: 65000
+  timeout: 130000
 })
 
 export async function healthCheck() {

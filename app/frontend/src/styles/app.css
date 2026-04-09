@@ -298,6 +298,71 @@ body {
   margin-top: 1rem;
 }
 
+.learn-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.learn-toc a {
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  background: #fff;
+  font-weight: 600;
+}
+
+.learn-toc a:hover {
+  border-color: var(--accent-alt);
+}
+
+.mini-algo-card {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 0.8rem;
+  margin-top: 0.7rem;
+  background: #fff;
+}
+
+.mini-algo-card h3 {
+  margin: 0 0 0.45rem;
+}
+
+.mini-algo-card p {
+  margin: 0.35rem 0;
+}
+
+.learn-image-wrap {
+  margin-top: 0.8rem;
+}
+
+.learn-image {
+  width: min(100%, 560px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  display: block;
+}
+
+.image-caption {
+  margin-top: 0.45rem;
+}
+
+.ida-notes {
+  margin-top: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+}
+
+.ida-notes summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .compare-table {
   width: 100%;
   border-collapse: collapse;

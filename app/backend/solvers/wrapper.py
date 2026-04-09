@@ -18,10 +18,10 @@ class AlgorithmType(str, Enum):
 
 
 DEFAULT_TIMEOUTS = {
-    AlgorithmType.BFS: 10,
-    AlgorithmType.DFS: 10,
-    AlgorithmType.IDDFS: 30,
-    AlgorithmType.IDASTAR: 60,
+    AlgorithmType.BFS: 120,
+    AlgorithmType.DFS: 120,
+    AlgorithmType.IDDFS: 120,
+    AlgorithmType.IDASTAR: 120,
 }
 
 
