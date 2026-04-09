@@ -50,3 +50,16 @@ class ValidateRequest(BaseModel):
 class ScrambleRequest(BaseModel):
     depth: int = Field(default=10, ge=1, le=30)
     seed: int | None = None
+
+
+class DifficultyScrambleRequest(BaseModel):
+    difficulty: str = Field(..., description="easy or medium")
+    seed: int | None = None
+
+    @field_validator("difficulty")
+    @classmethod
+    def validate_difficulty(cls, value: str) -> str:
+        normalized = value.lower().strip()
+        if normalized not in {"easy", "medium"}:
+            raise ValueError("difficulty must be one of: easy, medium")
+        return normalized

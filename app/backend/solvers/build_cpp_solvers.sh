@@ -16,10 +16,10 @@ CXXFLAGS=(-std=c++17 -O2 -pipe)
 "$CXX" "${CXXFLAGS[@]}" "$ADAPTER_DIR/iddfs_main.cpp" -o "$OUT_DIR/iddfs_solver"
 "$CXX" "${CXXFLAGS[@]}" "$ADAPTER_DIR/idastar_main.cpp" -o "$OUT_DIR/idastar_solver"
 
-if [[ -f "$CPP_REPO_DIR/cmake-build-debug/Database/cornerDepth5V1.txt" ]]; then
-  cp "$CPP_REPO_DIR/cmake-build-debug/Database/cornerDepth5V1.txt" "$OUT_DIR/Database/cornerDepth5V1.txt"
+if [[ -f "$CPP_REPO_DIR/Database/cornerDepth5V1.txt" ]]; then
+  cp "$CPP_REPO_DIR/Database/cornerDepth5V1.txt" "$OUT_DIR/Database/cornerDepth5V1.txt"
 else
-  echo "Pattern DB file not found at $CPP_REPO_DIR/cmake-build-debug/Database/cornerDepth5V1.txt" >&2
+  echo "Pattern DB file not found at $CPP_REPO_DIR/Database/cornerDepth5V1.txt" >&2
   exit 1
 fi
 

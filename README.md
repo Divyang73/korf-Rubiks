@@ -475,20 +475,14 @@ Acceptance Criteria:
 Build steps:
 
 ```bash
-cd /app/cpp_solver
-mkdir -p build && cd build
-cmake -G "Ninja" ..
-cmake --build .
+cd /app/backend
+./solvers/build_cpp_solvers.sh
 ```
 
-Copy binaries:
+Pattern database source:
 
 ```bash
-cp bfs_solver /app/backend/solvers/cpp_executables/
-cp dfs_solver /app/backend/solvers/cpp_executables/
-cp iddfs_solver /app/backend/solvers/cpp_executables/
-cp idastar_solver /app/backend/solvers/cpp_executables/
-cp -r cmake-build-debug/Database /app/backend/solvers/cpp_executables/
+cp /app/cpp_solver/Database/cornerDepth5V1.txt /app/backend/solvers/cpp_executables/Database/cornerDepth5V1.txt
 ```
 
 Expected solver I/O:

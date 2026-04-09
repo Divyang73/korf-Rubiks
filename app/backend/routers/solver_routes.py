@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import logging
+import random
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
-from models.solve_request import AlgorithmChoice, ScrambleRequest, SolveRequest, ValidateRequest
+from models.solve_request import (
+    AlgorithmChoice,
+    DifficultyScrambleRequest,
+    ScrambleRequest,
+    SolveRequest,
+    ValidateRequest,
+)
 from models.solve_response import ScrambleResponse, SolveResponse, ValidateResponse
 from solvers.wrapper import AlgorithmType, CppSolverWrapper
 from utils.cube_utils import random_scramble
@@ -69,6 +76,12 @@ ALGORITHM_INFO = {
 }
 
 
+DIFFICULTY_RANGES = {
+    "easy": (4, 6),
+    "medium": (10, 12),
+}
+
+
 @router.get("/")
 def health() -> dict[str, str]:
     return {
@@ -94,6 +107,24 @@ def generate_scramble(request: ScrambleRequest) -> ScrambleResponse:
     logger.info("scramble request received depth=%s seed=%s", request.depth, request.seed)
     generated = random_scramble(depth=request.depth, seed=request.seed)
     logger.info("scramble generated moves=%s", len(generated.scramble.split()))
+    return ScrambleResponse(
+        scramble=generated.scramble,
+        moves=len(generated.scramble.split()),
+        cube_state=generated.cube_state,
+    )
+
+
+@router.post("/scramble/by-difficulty", response_model=ScrambleResponse)
+def generate_scramble_by_difficulty(request: DifficultyScrambleRequest) -> ScrambleResponse:
+    min_depth, max_depth = DIFFICULTY_RANGES[request.difficulty]
+    depth = random.randint(min_depth, max_depth)
+    logger.info(
+        "difficulty scramble request received difficulty=%s selected_depth=%s seed=%s",
+        request.difficulty,
+        depth,
+        request.seed,
+    )
+    generated = random_scramble(depth=depth, seed=request.seed)
     return ScrambleResponse(
         scramble=generated.scramble,
         moves=len(generated.scramble.split()),
