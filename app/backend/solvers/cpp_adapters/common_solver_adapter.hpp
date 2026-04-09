@@ -15,6 +15,8 @@
 #include "../../../cpp_solver/Model/RubiksCube3dArray.cpp"
 
 inline char mapProjectColorToModelColor(char c) {
+    // Project colors use U=W, R=R, F=B, D=Y, L=O, B=G.
+    // Upstream model expects U=W, R=B, F=R, D=Y, L=G, B=O.
     switch (c) {
         case 'W': return 'W';
         case 'Y': return 'Y';

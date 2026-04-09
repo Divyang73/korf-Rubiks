@@ -10,7 +10,6 @@ import SolutionDisplay from '../components/SolutionDisplay/SolutionDisplay'
 import {
   generateDifficultyScramble,
   generateScramble,
-  getAlgorithmInfo,
   solveCube,
   validateCube
 } from '../api/client'
@@ -43,12 +42,11 @@ export default function Home() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [lastAction, setLastAction] = useState(null)
 
+  // Keep a very short initial skeleton so first paint feels intentional.
   useEffect(() => {
-    getAlgorithmInfo(selectedAlgorithm)
-      .then(() => null)
-      .catch(() => null)
-      .finally(() => setIsBooting(false))
-  }, [selectedAlgorithm])
+    const timer = setTimeout(() => setIsBooting(false), 220)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (!isLoading) return undefined
@@ -58,6 +56,7 @@ export default function Home() {
     return () => clearInterval(timer)
   }, [isLoading])
 
+  // Normalize network/timeout/server failures into a UI-friendly object.
   function buildErrorState(err, fallbackMessage) {
     return {
       message: err?.message || fallbackMessage,
@@ -100,6 +99,7 @@ export default function Home() {
     setLastAction(() => handleSolve)
     setResult(null)
     try {
+      // We validate first so solver errors only represent execution issues.
       const validationResponse = await validateCube(cubeStateToString(cubeState))
       setValidation(validationResponse)
       if (!validationResponse.valid) {
@@ -186,6 +186,7 @@ export default function Home() {
     setResult(null)
   }
 
+  // Retry always replays the exact last user action (scramble/solve/validate/apply moves).
   function handleRetry() {
     if (typeof lastAction === 'function') {
       lastAction()

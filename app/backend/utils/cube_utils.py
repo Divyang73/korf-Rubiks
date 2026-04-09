@@ -35,10 +35,12 @@ class ScrambleResult:
 
 
 def cube_state_to_kociemba(cube_state: str) -> str:
+    # Map project color-ordered string into kociemba's face-letter format.
     return "".join(_COLOR_CHAR_TO_FACE_CHAR[ch] for ch in cube_state)
 
 
 def pycuber_cube_to_state(cube: pc.Cube) -> str:
+    # Serialize in fixed U R F D L B order to match frontend/backend contracts.
     out: list[str] = []
     for face in _FACE_ORDER:
         f = cube.get_face(face)
@@ -67,6 +69,7 @@ def random_scramble(depth: int = 10, seed: int | None = None) -> ScrambleResult:
 
     while len(moves) < depth:
         face = rng.choice(base_faces)
+        # Avoid immediate same-face repeats to generate cleaner training scrambles.
         if face == last_face:
             continue
         move = f"{face}{rng.choice(suffixes)}"

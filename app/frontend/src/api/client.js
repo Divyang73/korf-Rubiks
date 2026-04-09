@@ -7,10 +7,12 @@ const http = axios.create({
   timeout: 130000
 })
 
+// Small async sleep used by retry backoff.
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// Convert transport/library errors into stable categories for UI handling.
 function classifyError(err) {
   const isTimeout = err?.code === 'ECONNABORTED'
   const hasNoResponse = !err?.response
@@ -53,6 +55,7 @@ async function requestWithRecovery(requestFn, options = {}) {
         normalized.attempts = attempts + 1
         throw normalized
       }
+      // Linear backoff keeps retries responsive but avoids immediate retry storms.
       attempts += 1
       await delay(retryDelayMs * attempts)
     }
@@ -86,10 +89,5 @@ export async function generateDifficultyScramble(difficulty) {
   const { data } = await requestWithRecovery(() =>
     http.post('/api/scramble/by-difficulty', { difficulty })
   )
-  return data
-}
-
-export async function getAlgorithmInfo(name) {
-  const { data } = await requestWithRecovery(() => http.get(`/api/algorithms/${name}`))
   return data
 }

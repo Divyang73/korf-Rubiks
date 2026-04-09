@@ -116,6 +116,7 @@ def generate_scramble(request: ScrambleRequest) -> ScrambleResponse:
 
 @router.post("/scramble/by-difficulty", response_model=ScrambleResponse)
 def generate_scramble_by_difficulty(request: DifficultyScrambleRequest) -> ScrambleResponse:
+    # Difficulty tiers are randomized within bounded move ranges for quick UX.
     min_depth, max_depth = DIFFICULTY_RANGES[request.difficulty]
     depth = random.randint(min_depth, max_depth)
     logger.info(
@@ -135,6 +136,8 @@ def generate_scramble_by_difficulty(request: DifficultyScrambleRequest) -> Scram
 @router.post("/solve", response_model=SolveResponse)
 def solve_cube(request: SolveRequest) -> SolveResponse:
     logger.info("solve request algorithm=%s", request.algorithm.value)
+
+    # Keep validation centralized so every solver call gets the same constraints.
     validation = CubeValidator.validate(request.cube_state)
     if not validation.valid:
         logger.warning("solve rejected by validation: %s", validation.errors)
@@ -151,6 +154,8 @@ def solve_cube(request: SolveRequest) -> SolveResponse:
         request.cube_state,
         algorithm=AlgorithmType(request.algorithm.value),
     )
+
+    # Convert native adapter failures to HTTP semantics expected by frontend.
     if not result.get("success"):
         logger.error("solve failed algorithm=%s error=%s details=%s", request.algorithm.value, result.get("error"), result.get("details"))
         error_msg = (result.get("error") or "Solver failed").lower()

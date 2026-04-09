@@ -10,6 +10,7 @@ function keyFor(sticker) {
   return `${sticker.pos.x},${sticker.pos.y},${sticker.pos.z}|${sticker.normal.x},${sticker.normal.y},${sticker.normal.z}`
 }
 
+// Convert a face-local index into a 3D cubie position + outward normal.
 function faceToSticker(face, index) {
   const r = Math.floor(index / 3)
   const c = index % 3
@@ -42,6 +43,7 @@ for (const face of FACE_ORDER) {
   }
 }
 
+// Quarter-turn rotation in right-handed 3D space.
 function rotateCoord(v, axis, turns) {
   const t = ((turns % 4) + 4) % 4
   if (t === 0) return { ...v }
@@ -70,6 +72,7 @@ function layerValue(pos, axis) {
   return pos.z
 }
 
+// Apply one clockwise quarter turn for a face token (U, R, F, ...).
 function applyQuarterMoveString(cubeString, face) {
   const config = MOVE_CONFIG[face]
   if (!config) return cubeString

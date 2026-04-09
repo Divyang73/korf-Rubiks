@@ -45,6 +45,7 @@ class CppSolverWrapper:
     ) -> dict[str, Any]:
         timeout = timeout or DEFAULT_TIMEOUTS[algorithm]
 
+        # Fast path avoids spawning a native process for already solved cubes.
         if cube_state == SOLVED_CUBE_STATE:
             return {
                 "success": True,
@@ -71,6 +72,7 @@ class CppSolverWrapper:
     def _run_cpp_solver(
         self, solver_path: str, cube_state: str, algorithm: AlgorithmType, timeout: int
     ) -> dict[str, Any]:
+        # Adapters read cube input from a file path, so write a temp file per request.
         with tempfile.NamedTemporaryFile("w", delete=False) as fp:
             fp.write(cube_state)
             input_file = fp.name
@@ -107,6 +109,7 @@ class CppSolverWrapper:
         if not lines:
             return {"success": False, "error": "Empty solver output"}
 
+        # Adapter contract: line 1 = move sequence, later lines include metadata.
         solution = lines[0]
         moves = len(solution.split()) if solution else 0
         time_ms = self._extract_int(lines, r"time\s*:\s*(\d+)")
