@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException
+
+from models.solve_request import AlgorithmChoice, ScrambleRequest, SolveRequest, ValidateRequest
+from models.solve_response import ScrambleResponse, SolveResponse, ValidateResponse
+from solvers.wrapper import AlgorithmType, CppSolverWrapper
+from utils.cube_utils import random_scramble
+from utils.cube_validator import CubeValidator
+
+router = APIRouter(prefix="/api", tags=["rubiks-solver"])
+SOLVER_EXECUTABLES_DIR = str(Path(__file__).resolve().parents[1] / "solvers" / "cpp_executables")
+solver_wrapper = CppSolverWrapper(executables_dir=SOLVER_EXECUTABLES_DIR)
+logger = logging.getLogger(__name__)
+
+
+ALGORITHM_INFO = {
+    "bfs": {
+        "name": "BFS",
+        "full_name": "Breadth-First Search",
+        "description": "Finds shortest solution, high memory usage",
+        "time_complexity": "O(b^d)",
+        "space_complexity": "O(b^d)",
+        "optimal": True,
+        "typical_moves": "optimal",
+        "expected_time": "<= 10s for shallow scrambles",
+        "memory_usage": "High",
+        "best_for": "<= 7 moves",
+    },
+    "dfs": {
+        "name": "DFS",
+        "full_name": "Depth-First Search",
+        "description": "Fast exploration, non-optimal in general",
+        "time_complexity": "O(b^d)",
+        "space_complexity": "O(d)",
+        "optimal": False,
+        "typical_moves": "variable",
+        "expected_time": "fast for first-found solutions",
+        "memory_usage": "Low",
+        "best_for": "quick demos",
+    },
+    "iddfs": {
+        "name": "IDDFS",
+        "full_name": "Iterative Deepening DFS",
+        "description": "Optimal like BFS, memory efficient like DFS",
+        "time_complexity": "O(b^d)",
+        "space_complexity": "O(d)",
+        "optimal": True,
+        "typical_moves": "optimal",
+        "expected_time": "<= 30s medium scrambles",
+        "memory_usage": "Low",
+        "best_for": "balanced search",
+    },
+    "idastar": {
+        "name": "IDA*",
+        "full_name": "Iterative Deepening A*",
+        "description": "Heuristic search with strong practical performance",
+        "time_complexity": "O(b^d)",
+        "space_complexity": "O(d)",
+        "optimal": True,
+        "typical_moves": "near-optimal / optimal",
+        "expected_time": "<= 60s",
+        "memory_usage": "Low",
+        "best_for": "production use",
+    },
+}
+
+
+@router.get("/")
+def health() -> dict[str, str]:
+    return {
+        "message": "Rubik's Cube Solver API",
+        "version": "1.0.0",
+        "status": "operational",
+    }
+
+
+@router.post("/validate", response_model=ValidateResponse)
+def validate_cube(request: ValidateRequest) -> ValidateResponse:
+    logger.info("validate request received")
+    result = CubeValidator.validate(request.cube_state)
+    if not result.valid:
+        logger.warning("validate failed: %s", result.errors)
+    else:
+        logger.info("validate succeeded")
+    return ValidateResponse(valid=result.valid, message=result.message, errors=result.errors or None)
+
+
+@router.post("/scramble", response_model=ScrambleResponse)
+def generate_scramble(request: ScrambleRequest) -> ScrambleResponse:
+    logger.info("scramble request received depth=%s seed=%s", request.depth, request.seed)
+    generated = random_scramble(depth=request.depth, seed=request.seed)
+    logger.info("scramble generated moves=%s", len(generated.scramble.split()))
+    return ScrambleResponse(
+        scramble=generated.scramble,
+        moves=len(generated.scramble.split()),
+        cube_state=generated.cube_state,
+    )
+
+
+@router.post("/solve", response_model=SolveResponse)
+def solve_cube(request: SolveRequest) -> SolveResponse:
+    logger.info("solve request algorithm=%s", request.algorithm.value)
+    validation = CubeValidator.validate(request.cube_state)
+    if not validation.valid:
+        logger.warning("solve rejected by validation: %s", validation.errors)
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "INVALID_CUBE_STATE",
+                "message": "Cube configuration is invalid",
+                "details": validation.errors,
+            },
+        )
+
+    result = solver_wrapper.solve(
+        request.cube_state,
+        algorithm=AlgorithmType(request.algorithm.value),
+    )
+    if not result.get("success"):
+        logger.error("solve failed algorithm=%s error=%s details=%s", request.algorithm.value, result.get("error"), result.get("details"))
+        error_msg = (result.get("error") or "Solver failed").lower()
+        if "timeout" in error_msg:
+            raise HTTPException(status_code=408, detail=result)
+        raise HTTPException(status_code=500, detail=result)
+
+    logger.info("solve succeeded algorithm=%s moves=%s backend=%s", request.algorithm.value, result.get("moves"), result.get("solver_backend"))
+
+    stats = None
+    if request.include_stats:
+        stats = {
+            "nodes_explored": result.get("nodes_explored"),
+            "memory_mb": result.get("memory_mb"),
+            "optimal": request.algorithm in {
+                AlgorithmChoice.BFS,
+                AlgorithmChoice.IDDFS,
+                AlgorithmChoice.IDASTAR,
+            },
+            "solver_backend": result.get("solver_backend", "cpp"),
+        }
+
+    return SolveResponse(
+        success=True,
+        solution=result.get("solution", ""),
+        moves=result.get("moves", 0),
+        algorithm=request.algorithm.value,
+        time_ms=result.get("time_ms", 0),
+        statistics=stats,
+    )
+
+
+@router.get("/algorithms/{algorithm_name}")
+def get_algorithm_info(algorithm_name: str) -> dict:
+    key = algorithm_name.lower()
+    if key not in ALGORITHM_INFO:
+        raise HTTPException(status_code=404, detail="Unknown algorithm")
+    return ALGORITHM_INFO[key]

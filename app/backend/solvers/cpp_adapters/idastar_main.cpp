@@ -1,0 +1,46 @@
+#include <chrono>
+#include <filesystem>
+#include <iostream>
+
+#include "common_solver_adapter.hpp"
+#include "../../../cpp_solver/PatternDatabases/NibbleArray.cpp"
+#include "../../../cpp_solver/PatternDatabases/PatternDatabase.cpp"
+#include "../../../cpp_solver/PatternDatabases/CornerPatternDatabase.cpp"
+#include "../../../cpp_solver/PatternDatabases/math.cpp"
+#include "../../../cpp_solver/Solver/IDAstarSolver.h"
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "Usage: idastar_solver <input_file> [corner_db_path]\n";
+        return 2;
+    }
+
+    try {
+        const std::string state = readStateFromInputFile(argv[1]);
+        RubiksCube3dArray cube = cubeFromProjectState(state);
+
+        std::string dbPath;
+        if (argc >= 3) {
+            dbPath = argv[2];
+        } else {
+            const auto exePath = std::filesystem::absolute(argv[0]);
+            dbPath = (exePath.parent_path() / "Database" / "cornerDepth5V1.txt").string();
+        }
+
+        auto started = std::chrono::high_resolution_clock::now();
+        IDAstarSolver<RubiksCube3dArray, Hash3d> solver(cube, dbPath);
+        auto moves = solver.solve();
+        auto ended = std::chrono::high_resolution_clock::now();
+
+        const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(ended - started).count();
+
+        std::cout << movesToString(moves) << "\n";
+        std::cout << "Moves: " << moves.size() << "\n";
+        std::cout << "Time: " << elapsedMs << "ms\n";
+        std::cout << "Nodes: 0\n";
+        return 0;
+    } catch (const std::exception& ex) {
+        std::cerr << ex.what() << "\n";
+        return 1;
+    }
+}
