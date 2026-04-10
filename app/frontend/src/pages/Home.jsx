@@ -162,7 +162,6 @@ export default function Home() {
     setCubeState((prev) => applySingleMove(prev, move))
     setMoveHistory((prev) => [...prev, move])
     setValidation(null)
-    setResult(null)
     setError(null)
   }
 
@@ -172,7 +171,6 @@ export default function Home() {
     setCubeState((prev) => applyMovesToState(prev, manualMoves))
     setMoveHistory((prev) => [...prev, ...manualMoves.trim().split(/\s+/)])
     setValidation(null)
-    setResult(null)
     setError(null)
   }
 
@@ -183,7 +181,6 @@ export default function Home() {
     setCubeState((prev) => applySingleMove(prev, inverse))
     setMoveHistory((prev) => prev.slice(0, -1))
     setValidation(null)
-    setResult(null)
   }
 
   // Retry always replays the exact last user action (scramble/solve/validate/apply moves).
@@ -282,6 +279,9 @@ export default function Home() {
               onClick={() => {
                 setCubeState(cloneCubeState(CLEAR_STATE))
                 setMoveHistory([])
+                setValidation(null)
+                setResult(null)
+                setError(null)
               }}
               disabled={isLoading}
             >
@@ -292,6 +292,9 @@ export default function Home() {
               onClick={() => {
                 setCubeState(cloneCubeState(SOLVED_STATE))
                 setMoveHistory([])
+                setValidation(null)
+                setResult(null)
+                setError(null)
               }}
               disabled={isLoading}
             >
