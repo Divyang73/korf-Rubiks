@@ -1,10 +1,10 @@
 #ifndef IDASTARSOLVER_H
 #define IDASTARSOLVER_H
 
-#include <algorithm>
 #include <cassert>
 #include <climits>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "../Model/RubiksCube.h"
@@ -20,21 +20,18 @@ private:
     std::vector<RubiksCube::MOVE> path;
 
     static const int FOUND = -1;
-
-    // Returns inverse of move m.  MOVE enum layout per face group: cw=0, ccw=1, half=2.
-    static RubiksCube::MOVE inverseMove(RubiksCube::MOVE m) {
-        int idx = static_cast<int>(m);
-        int type = idx % 3;
-        if (type == 0) return RubiksCube::MOVE(idx + 1); // cw  -> ccw
-        if (type == 1) return RubiksCube::MOVE(idx - 1); // ccw -> cw
-        return m;                                          // half-turn is self-inverse
-    }
+    // Sentinel meaning "no face was last" so all 6 faces are allowed at root.
+    static const int NO_FACE = -1;
 
     // DFS with f-cost bound.
     // Applies moves directly to `cube` (passed by reference from solve()).
     // Undoes each move before returning unless the solution was found.
     // Returns FOUND if goal reached, otherwise the minimum f-cost that exceeded the bound.
-    int search(T& cube, int g, int bound) {
+    //
+    // lastFace: face index (MOVE index / 3) of the previous move, or NO_FACE at root.
+    // Skipping same-face consecutive moves is correct because any sequence of moves
+    // on a single face reduces to at most one move.
+    int search(T& cube, int g, int bound, int lastFace) {
         int h = static_cast<int>(cornerDB.getNumMoves(cube));
         int f = g + h;
         if (f > bound) return f;
@@ -42,14 +39,14 @@ private:
 
         int minExceeded = INT_MAX;
         for (int i = 0; i < 18; i++) {
-            RubiksCube::MOVE curr = RubiksCube::MOVE(i);
-            // Skip the direct inverse of the last move: A then A' is a no-op.
-            if (!path.empty() && inverseMove(curr) == path.back()) continue;
+            int thisFace = i / 3;
+            if (thisFace == lastFace) continue;
 
+            RubiksCube::MOVE curr = RubiksCube::MOVE(i);
             cube.move(curr);
             path.push_back(curr);
 
-            int result = search(cube, g + 1, bound);
+            int result = search(cube, g + 1, bound, thisFace);
 
             if (result == FOUND) return FOUND;
             if (result < minExceeded) minExceeded = result;
@@ -63,7 +60,7 @@ private:
 public:
     T rubiksCube;
 
-    IDAstarSolver(T _rubiksCube, const std::string& fileName) : rubiksCube(_rubiksCube) {
+    IDAstarSolver(const T& _rubiksCube, const std::string& fileName) : rubiksCube(_rubiksCube) {
         cornerDB.fromFile(fileName);
     }
 
@@ -74,13 +71,13 @@ public:
         path.clear();
 
         while (true) {
-            int result = search(rubiksCube, 0, bound);
+            int result = search(rubiksCube, 0, bound, NO_FACE);
             if (result == FOUND) {
                 assert(rubiksCube.isSolved());
                 return path;
             }
             if (result == INT_MAX) {
-                // No solution reachable — should not happen for a valid cube state.
+                // No solution reachable -- should not happen for a valid cube state.
                 return {};
             }
             bound = result;
