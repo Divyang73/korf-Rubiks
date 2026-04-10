@@ -1,259 +1,114 @@
-# Rubik's Cube Solver
+# Korf Rubik's Solver
 
-A high-performance web application for solving Rubik's Cubes using multiple algorithms. Integrates optimized C++ solvers (BFS, DFS, IDDFS, IDA*) with a modern React frontend for an interactive solving experience.
+A web application that solves 3x3 Rubik's Cubes using four classic search algorithms implemented in C++ and exposed through a Python/FastAPI backend with a React frontend.
 
-## Features
+## What it does
 
-- **Multiple Solving Algorithms** — BFS, DFS, IDDFS, and IDA* (with pattern database)
-- **Interactive Cube Input** — Visual 2D unfolded cube net for intuitive state entry
-- **Manual Move Controls** — Apply moves directly via buttons or text input
-- **Difficulty Levels** — Easy (8-15 moves) and Medium (16-25 moves) scrambles
-- **Real-time Validation** — Verify cube solvability before solving
-- **Step-by-Step Solutions** — Clear move notation following standard Rubik's cube conventions
-- **Performance Metrics** — View solve time and algorithm efficiency
+You paint a 2D unfolded net of your scrambled cube in the browser. The frontend serializes the 54-sticker state into a string and sends it to the backend. The backend validates the state (checking color counts, center consistency, and solvability via the Kociemba library), then spawns the requested C++ solver as a subprocess. The solver reads the cube state from a temp file, runs the search algorithm, and prints the solution moves to stdout. The backend parses that output and returns the move sequence to the frontend, which displays it as step-by-step notation.
 
-## Tech Stack
+The four algorithms are:
 
-**Backend:**
-- FastAPI 0.115.0
-- Python 3.8+ with Pydantic
-- C++ solvers (compiled adapters)
-- Kociemba for solvability validation
+- **BFS**: Breadth-first search. Guaranteed optimal. Practical only for shallow scrambles (up to about 7 moves) because memory grows exponentially with depth.
+- **DFS**: Depth-limited depth-first search. Very fast, low memory, but not optimal. Useful for testing.
+- **IDDFS**: Iterative-deepening DFS. Calls DFS with increasing depth limits. Finds optimal solutions with DFS-level memory.
+- **IDA\***: True iterative-deepening A* (Korf 1985). DFS with a heuristic cost bound that increases each iteration. Uses a partial corner pattern database as the admissible heuristic. No visited map, no priority queue -- O(d) memory where d is the solution depth. The current PDB covers corner positions up to depth 5; a complete corner PDB would improve solution quality for deeper scrambles significantly.
 
-**Frontend:**
-- React 19.0.0
-- Vite 5.4.8
-- Axios with custom retry/backoff logic
-- CSS for responsive design
+The C++ solver library (`app/cpp_solver/`) is adapted from [github.com/piyush932/Rubiks-Cube-Solver-Using-Korfs-IDA-Algo](https://github.com/piyush932/Rubiks-Cube-Solver-Using-Korfs-IDA-Algo). The backend adapter layer, API, and frontend are original work.
 
-## Requirements
+## How to run it
 
-- **Python** 3.8 or higher
-- **Node.js** 16+ with npm
-- **C++ Compiler** (g++ or clang) for building solver adapters
+Requirements: Python 3.8+, Node.js 16+, g++ or clang with C++17 support.
 
-## Quick Start
-
-### 1. Clone the Repository
+**1. Clone**
 
 ```bash
 git clone https://github.com/Divyang73/korf-Rubiks.git
 cd korf-Rubiks
 ```
 
-### 2. Set Up and Run Backend
+**2. Build the C++ solvers**
+
+```bash
+cd app/backend/solvers
+bash build_cpp_solvers.sh
+```
+
+This compiles the four solver adapters and copies the pattern database file into `app/backend/solvers/cpp_executables/`. The compiled binaries are not committed to the repo; you must build them locally.
+
+**3. Start the backend**
 
 ```bash
 cd app/backend
-
-# Install Python dependencies
-python -m pip install -r requirements.txt
-
-# Build C++ solver executables
-./solvers/build_cpp_solvers.sh
-
-# Start FastAPI server
+pip install -r requirements.txt
 python server.py
 ```
 
-Backend runs on `http://localhost:8001`  
-Swagger API docs available at `http://localhost:8001/docs`
+Backend runs on `http://localhost:8001`. Swagger docs at `http://localhost:8001/docs`.
 
-### 3. Set Up and Run Frontend (New Terminal)
+**4. Start the frontend** (new terminal)
 
 ```bash
 cd app/frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Frontend runs on `http://localhost:3000`
+Frontend runs on `http://localhost:3000`.
 
-## Project Structure
+## Project structure
 
 ```
 korf-Rubiks/
-├── app/
-│   ├── backend/
-│   │   ├── routers/             # API endpoints
-│   │   ├── solvers/
-│   │   │   ├── cpp_adapters/    # C++ solver wrappers
-│   │   │   ├── cpp_executables/ # Compiled binaries
-│   │   │   └── build_cpp_solvers.sh
-│   │   ├── models/              # Pydantic schemas
-│   │   ├── utils/               # Cube state, validation, utils
-│   │   ├── tests/               # Unit tests
-│   │   ├── requirements.txt
-│   │   └── server.py            # FastAPI app entry
-│   ├── frontend/
-│   │   ├── src/
-│   │   │   ├── pages/           # Home (solver)
-│   │   │   ├── components/      # Reusable UI components
-│   │   │   ├── api/             # HTTP client
-│   │   │   └── utils/           # Cube state & move simulation
-│   │   ├── package.json
-│   │   └── vite.config.js
-│   └── cpp_solver/              # Core algorithms (BFS/DFS/IDDFS/IDA*)
-└── README.md
+  app/
+    backend/
+      routers/             API route handlers
+      solvers/
+        cpp_adapters/      C++ main files (one per algorithm)
+        build_cpp_solvers.sh
+      models/              Pydantic request/response schemas
+      utils/               Cube state serialization, validation helpers
+      tests/
+      requirements.txt
+      server.py
+    frontend/
+      src/
+        pages/             Home page (solver UI)
+        components/        UI components
+        api/               HTTP client with retry/backoff
+        utils/             Cube state and move simulation
+    cpp_solver/            Core algorithm library (BFS, DFS, IDDFS, IDA*)
+  README.md
 ```
 
-## API Overview
-
-### Main Endpoints
+## API
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/api/validate` | Check if cube state is valid and solvable |
-| `POST` | `/api/scramble` | Generate random scramble |
-| `POST` | `/api/scramble/difficulty` | Generate scramble by difficulty (easy/medium) |
-| `POST` | `/api/solve` | Solve cube with selected algorithm |
-
-### Example: Solve a Cube
-
-```bash
-curl -X POST http://localhost:8001/api/solve \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cube_state": "WWWWWWWWWRRRRRRRRRBBBBBBBBLLLLLLLLLYYYYYYYYYGGGGGGGGG",
-    "algorithm": "idastar"
-  }'
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "moves": ["R", "U'", "F2", "D"],
-  "time_ms": 45.2,
-  "statistics": {
-    "nodes_expanded": 2150,
-    "max_depth": 4
-  }
-}
-```
-
-## Solving Algorithms
-
-| Algorithm | Type | Speed | Optimality | Memory |
-|-----------|------|-------|------------|--------|
-| **BFS** | Breadth-First Search | Slow | Optimal | High |
-| **DFS** | Depth-First Search | Fast | Non-optimal | Low |
-| **IDDFS** | Iterative Deepening DFS | Medium | Optimal | Low |
-| **IDA*** | Iterative Deepening A* + PDB | Fast | Optimal | Low |
-
-**Recommended:** IDA* provides optimal solutions with practical performance for most cube configurations.
-
-## Screenshots
-
-### Home Page - Cube Input & Controls
-![Cube Solver Interface](docs/screenshots/home-cube-input.png)
-
-### Manual Move Controls & Move History
-![Move Controls](docs/screenshots/move-controls.png)
-
-### Solution Results with Statistics
-![Solution Display](docs/screenshots/solution-results.png)
-
-### Algorithm & Difficulty Selection
-![Algorithm and Difficulty Selection](docs/screenshots/algorithm-difficulty.png)
-
-*To add actual screenshots: Capture your app UI and place PNG files in `docs/screenshots/` directory with the names above.*
-
-## Build and Deploy
-
-### Production Frontend Build
-
-```bash
-cd app/frontend
-npm run build
-# Output: dist/
-```
-
-### Run Tests
-
-```bash
-cd app/backend
-python -m pytest tests/ -v
-```
+| POST | /api/validate | Validate cube state |
+| POST | /api/scramble | Generate random scramble |
+| POST | /api/scramble/difficulty | Scramble by difficulty level |
+| POST | /api/solve | Solve with selected algorithm |
 
 ## Troubleshooting
 
-### Backend fails to start: "ModuleNotFoundError"
+**Build fails: command not found: g++**
 ```bash
-# Ensure dependencies are installed
-pip install -r requirements.txt --upgrade
-```
-
-### C++ solver build fails: "command not found: g++"
-```bash
-# Install build tools (Ubuntu/Debian)
+# Ubuntu/Debian
 sudo apt-get install build-essential
-
 # macOS
-brew install gcc
+xcode-select --install
 ```
 
-### Frontend shows "Connection refused"
-- Verify backend is running: `curl http://localhost:8001/docs`
-- Check that frontend env is set to correct backend URL
-- Ensure ports 3000 and 8001 are not in use
-
-### Cube validation fails but state looks correct
-- Cube must be in a solvable configuration (achievable from solved state)
-- Use `/api/scramble` endpoint to generate valid states
-- Ensure all 54 stickers are present (9 per face, 6 faces)
-
-## Performance
-
-- **Average solve time (IDA*)**: 10-100ms for typical scrambles
-- **Memory usage**: <50MB per solve operation
-- **Pattern database**: 12MB (pre-built, included)
-
-## Development
-
-### Code Style
-
-- **Python**: Follow PEP 8
-- **JavaScript**: ESLint (Vite default)
-- **C++**: Uses `using namespace std;` for cleaner adapter code
-
-### Run Tests
-
+**Backend fails to start: ModuleNotFoundError**
 ```bash
-cd app/backend
-python -m pytest tests/ -q
+pip install -r requirements.txt
 ```
 
-## Future Enhancements
-
-- [ ] 3D cube visualization with threejs
-- [ ] Solution animation playback
-- [ ] Cube size variants (2x2, 4x4, 5x5)
-- [ ] Performance profiling dashboard
-- [ ] Mobile app (React Native)
+**Frontend: connection refused**
+Confirm backend is running on port 8001 and there are no port conflicts.
 
 ## References
 
-- **Korf's IDA* Algorithm**: https://github.com/piyush932/Rubiks-Cube-Solver-Using-Korfs-IDA-Algo
-- **Rubik's Cube Notation**: https://en.wikipedia.org/wiki/Rubik's_Cube#Move_notation
-- **Pattern Databases**: https://en.wikipedia.org/wiki/Pattern_database
-
-## License
-
-MIT License — See LICENSE file for details
-
-## Author
-
-**Divyang73** — Full-stack portfolio project integrating C++ algorithms with modern web technologies.
-
----
-
-**Have questions?** Open an issue or explore the Swagger API docs at `http://localhost:8001/docs`
-
-
-
-End of Document.
+- Korf, R. E. (1985). Depth-first iterative-deepening: An optimal admissible tree search. Artificial Intelligence, 27(1), 97-109.
+- Upstream C++ solver library: https://github.com/piyush932/Rubiks-Cube-Solver-Using-Korfs-IDA-Algo
+- Pattern databases: https://en.wikipedia.org/wiki/Pattern_database

@@ -1,7 +1,5 @@
 #include "NibbleArray.h"
 
-using namespace std;
-
 NibbleArray::NibbleArray(const size_t size, const uint8_t val) :
         size(size), arr(size / 2 + 1, val) {
 }
@@ -51,7 +49,7 @@ size_t NibbleArray::storageSize() const {
 // Move all the moves to a vector. This doubles the size, but is faster to access,
 // since there is no bitwise operation needed.
 
-void NibbleArray::inflate(vector<uint8_t> &dest) const {
+void NibbleArray::inflate(std::vector<uint8_t> &dest) const {
     dest.reserve(this->size);
 
     for (unsigned i = 0; i < this->size; ++i)
@@ -60,5 +58,5 @@ void NibbleArray::inflate(vector<uint8_t> &dest) const {
 
 // Reset the array
 void NibbleArray::reset(const uint8_t val) {
-    fill(this->arr.begin(), this->arr.end(), val);
+    std::fill(this->arr.begin(), this->arr.end(), val);
 }

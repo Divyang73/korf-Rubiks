@@ -1,23 +1,19 @@
 const ALGORITHMS = [
   {
     key: 'bfs',
-    label: 'BFS - Breadth-First Search',
-    bestFor: '<= 7 moves, guaranteed optimal'
+    label: 'BFS - Breadth-First Search'
   },
   {
     key: 'dfs',
-    label: 'DFS - Depth-First Search',
-    bestFor: 'quick non-optimal solutions'
+    label: 'DFS - Depth-First Search'
   },
   {
     key: 'iddfs',
-    label: 'IDDFS - Iterative Deepening DFS',
-    bestFor: 'balanced optimal solving'
+    label: 'IDDFS - Iterative Deepening DFS'
   },
   {
     key: 'idastar',
-    label: 'IDA* - Iterative Deepening A* (Recommended)',
-    bestFor: 'production use, deeper scrambles'
+    label: 'IDA* - Iterative Deepening A* (Recommended)'
   }
 ]
 
@@ -38,7 +34,6 @@ export default function AlgorithmDropdown({ selectedAlgorithm, onSelect, disable
           </option>
         ))}
       </select>
-      <p className="muted">Best for: {ALGORITHMS.find((a) => a.key === selectedAlgorithm)?.bestFor}</p>
     </div>
   )
 }
