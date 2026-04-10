@@ -1,111 +1,88 @@
-#include <cstdint>
-#include <string>
-#include <queue>
-#include <vector>
-#include <map>
-#include <cassert>
-#include "../Model/RubiksCube.h"
-//#include "../Model/PatternDatabase/PatternDatabase.h"
-#include "../PatternDatabases/CornerPatternDatabase.h"
-
 #ifndef IDASTARSOLVER_H
 #define IDASTARSOLVER_H
+
+#include <cassert>
+#include <climits>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "../Model/RubiksCube.h"
+#include "../PatternDatabases/CornerPatternDatabase.h"
+
+// True IDA* (Korf 1985): iterative-deepening depth-first search with an
+// admissible heuristic cost bound.  No visited map, no priority queue.
+// Memory usage is O(d) where d is the solution depth.
 template<typename T, typename H>
 class IDAstarSolver {
 private:
     CornerPatternDatabase cornerDB;
-    vector<RubiksCube::MOVE> moves;
-    unordered_map<T, RubiksCube::MOVE, H> move_done;
-    unordered_map<T, bool, H> visited;
+    std::vector<RubiksCube::MOVE> path;
 
-    struct Node {
-        T cube;
-        int depth;
-        int estimate;
+    static const int FOUND = -1;
+    // Sentinel meaning "no face was last" so all 6 faces are allowed at root.
+    static const int NO_FACE = -1;
 
-        Node(T _cube, int _depth, int _estimate) : cube(_cube), depth(_depth), estimate(_estimate) {};
-    };
+    // DFS with f-cost bound.
+    // Applies moves directly to `cube` (passed by reference from solve()).
+    // Undoes each move before returning unless the solution was found.
+    // Returns FOUND if goal reached, otherwise the minimum f-cost that exceeded the bound.
+    //
+    // lastFace: face index (MOVE index / 3) of the previous move, or NO_FACE at root.
+    // Skipping same-face consecutive moves is correct because any sequence of moves
+    // on a single face reduces to at most one move.
+    int search(T& cube, int g, int bound, int lastFace) {
+        int h = static_cast<int>(cornerDB.getNumMoves(cube));
+        int f = g + h;
+        if (f > bound) return f;
+        if (cube.isSolved()) return FOUND;
 
-    struct compareCube {
-        bool operator()(pair<Node, int> const &p1, pair<Node, int> const &p2) {
-            auto n1 = p1.first, n2 = p2.first;
-            if (n1.depth + n1.estimate == n2.depth + n2.estimate) {
-                return n1.estimate > n2.estimate;
-            } else return n1.depth + n1.estimate > n2.depth + n2.estimate;
+        int minExceeded = INT_MAX;
+        for (int i = 0; i < 18; i++) {
+            int thisFace = i / 3;
+            if (thisFace == lastFace) continue;
+
+            RubiksCube::MOVE curr = RubiksCube::MOVE(i);
+            cube.move(curr);
+            path.push_back(curr);
+
+            int result = search(cube, g + 1, bound, thisFace);
+
+            if (result == FOUND) return FOUND;
+            if (result < minExceeded) minExceeded = result;
+
+            path.pop_back();
+            cube.invert(curr);
         }
-    };
-
-    void resetStructure() {
-        moves.clear();
-        move_done.clear();
-        visited.clear();
-    }
-
-    // returns {solved cube, bound}: if the cube was solved
-    // returns {rubiksCube, next_bound}, if the cube was not solved
-    pair<T, int> IDAstar(int bound) {
-        //        priority_queue contains pair(Node, move done to reach that)
-        priority_queue<pair<Node, int>, vector<pair<Node, int>>, compareCube> pq;
-        Node start = Node(rubiksCube, 0, cornerDB.getNumMoves(rubiksCube));
-        pq.push(make_pair(start, 0));
-        int next_bound = 100;
-        while (!pq.empty()) {
-            auto p = pq.top();
-            Node node = p.first;
-            pq.pop();
-
-            if (visited[node.cube]) continue;
-
-            visited[node.cube] = true;
-            move_done[node.cube] = RubiksCube::MOVE(p.second);
-
-            if (node.cube.isSolved()) return make_pair(node.cube, bound);
-            node.depth++;
-            for (int i = 0; i < 18; i++) {
-                auto curr_move = RubiksCube::MOVE(i);
-                node.cube.move(curr_move);
-                if (!visited[node.cube]) {
-                    node.estimate = cornerDB.getNumMoves(node.cube);
-                    if (node.estimate + node.depth > bound) {
-                        next_bound = min(next_bound, node.estimate + node.depth);
-                    } else {
-                        pq.push(make_pair(node, i));
-                    }
-                }
-                node.cube.invert(curr_move);
-            }
-
-        }
-        return make_pair(rubiksCube, next_bound);
+        return minExceeded;
     }
 
 public:
     T rubiksCube;
 
-    IDAstarSolver(T _rubiksCube, string fileName) {
-        rubiksCube = _rubiksCube;
+    IDAstarSolver(const T& _rubiksCube, const std::string& fileName) : rubiksCube(_rubiksCube) {
         cornerDB.fromFile(fileName);
     }
 
-    vector<RubiksCube::MOVE> solve() {
-        int bound = 1;
-        auto p = IDAstar(bound);
-        while (p.second != bound) {
-            resetStructure();
-            bound = p.second;
-            p = IDAstar(bound);
+    // Returns the sequence of moves that solves the cube.
+    // After solve() returns, rubiksCube holds the solved state.
+    std::vector<RubiksCube::MOVE> solve() {
+        int bound = static_cast<int>(cornerDB.getNumMoves(rubiksCube));
+        path.clear();
+
+        while (true) {
+            int result = search(rubiksCube, 0, bound, NO_FACE);
+            if (result == FOUND) {
+                assert(rubiksCube.isSolved());
+                return path;
+            }
+            if (result == INT_MAX) {
+                // No solution reachable -- should not happen for a valid cube state.
+                return {};
+            }
+            bound = result;
         }
-        T solved_cube = p.first;
-        assert(solved_cube.isSolved());
-        T curr_cube = solved_cube;
-        while (!(curr_cube == rubiksCube)) {
-            RubiksCube::MOVE curr_move = move_done[curr_cube];
-            moves.push_back(curr_move);
-            curr_cube.invert(curr_move);
-        }
-        rubiksCube = solved_cube;
-        reverse(moves.begin(), moves.end());
-        return moves;
     }
 };
-#endif //IDASTARSOLVER_H
+
+#endif // IDASTARSOLVER_H

@@ -13,8 +13,6 @@
 #include <cassert>
 #include <fstream>
 
-using namespace std;
-
 class PatternDatabase {
 
     NibbleArray database;
@@ -44,11 +42,11 @@ public:
 
     virtual bool isFull() const;
 
-    virtual void toFile(const string &filePath) const;
+    virtual void toFile(const std::string &filePath) const;
 
-    virtual bool fromFile(const string &filePath);
+    virtual bool fromFile(const std::string &filePath);
 
-    virtual vector<uint8_t> inflate() const;
+    virtual std::vector<uint8_t> inflate() const;
 
     virtual void reset();
 };

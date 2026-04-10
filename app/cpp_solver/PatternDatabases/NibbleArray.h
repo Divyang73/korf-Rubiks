@@ -8,11 +8,9 @@
 #include <map>
 #include <cassert>
 
-using namespace std;
-
 class NibbleArray {
     size_t size;
-    vector<uint8_t> arr;
+    std::vector<uint8_t> arr;
 
 public:
     NibbleArray(const size_t size, const uint8_t val = 0xFF);
@@ -27,7 +25,7 @@ public:
 
     size_t storageSize() const;
 
-    void inflate(vector<uint8_t> &dest) const;
+    void inflate(std::vector<uint8_t> &dest) const;
 
     void reset(const uint8_t val = 0xFF);
 

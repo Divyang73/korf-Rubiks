@@ -205,7 +205,6 @@ export default function Home() {
     <main className="page">
       <section className="hero">
         <h1>Interactive Rubik&apos;s Cube Solver</h1>
-        <p>Input a cube state, choose an algorithm, and get step-by-step notation.</p>
       </section>
 
       {isBooting && (
@@ -225,7 +224,6 @@ export default function Home() {
             isLocked={isLoading}
           />
           <ColorPalette activeColor={activeColor} onColorSelect={setActiveColor} />
-          <p className="muted">Tip: use move buttons on the right panel to apply turns directly.</p>
         </section>
 
         <section className="panel control-panel">

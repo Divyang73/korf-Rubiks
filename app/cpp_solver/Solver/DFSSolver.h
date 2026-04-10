@@ -12,7 +12,7 @@ template<typename T, typename H>
 class DFSSolver {
 private:
 
-    vector<RubiksCube::MOVE> moves;
+    std::vector<RubiksCube::MOVE> moves;
     int max_search_depth;
 
     //    DFS code to find the solution (helper function)
@@ -37,7 +37,7 @@ public:
         max_search_depth = _max_search_depth;
     }
 
-    vector<RubiksCube::MOVE> solve() {
+    std::vector<RubiksCube::MOVE> solve() {
         dfs(1);
         return moves;
     }

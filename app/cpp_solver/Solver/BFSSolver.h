@@ -3,21 +3,23 @@
 #include <queue>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <cassert>
+#include <algorithm>
 #include "../Model/RubiksCube.h"
 #ifndef BFSSOLVER_H
 #define BFSSOLVER_H
 template<typename T, typename H>
 class BFSSolver {
 private:
-    vector<RubiksCube::MOVE> moves;
-    unordered_map<T, bool, H> visited;
-    unordered_map<T, RubiksCube::MOVE, H> move_done;
+    std::vector<RubiksCube::MOVE> moves;
+    std::unordered_map<T, bool, H> visited;
+    std::unordered_map<T, RubiksCube::MOVE, H> move_done;
 
     //    bfs() -> performs breadth-first-search and returns a solved Rubik's Cube
     //    move_done[] -> Back-Pointer map as to how we reached that state
     T bfs() {
-        queue<T> q;
+        std::queue<T> q;
         q.push(rubiksCube);
         visited[rubiksCube] = true;
 
@@ -49,7 +51,7 @@ public:
     }
 
     //    Performs BFS and returns the vector of moves done to solve the cube
-    vector<RubiksCube::MOVE> solve() {
+    std::vector<RubiksCube::MOVE> solve() {
         T solved_cube = bfs();
         assert(solved_cube.isSolved());
         T curr_cube = solved_cube;
@@ -59,7 +61,7 @@ public:
             curr_cube.invert(curr_move);
         }
         rubiksCube = solved_cube;
-        reverse(moves.begin(), moves.end());
+        std::reverse(moves.begin(), moves.end());
         return moves;
     }
 };

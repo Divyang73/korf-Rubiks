@@ -25,7 +25,7 @@ char RubiksCube::getColorLetter(COLOR color) {
 /*
  * Describe a move using an index
  */
-string RubiksCube::getMove(MOVE ind) {
+std::string RubiksCube::getMove(MOVE ind) {
     switch (ind) {
         case MOVE::L:
             return "L";
@@ -158,55 +158,55 @@ RubiksCube &RubiksCube::invert(MOVE ind) {
 }
 
 void RubiksCube::print() const {
-    cout << "Rubik's Cube:\n\n";
+    std::cout << "Rubik's Cube:\n\n";
 
     for (int row = 0; row <= 2; row++) {
-        for (unsigned i = 0; i < 7; i++) cout << " ";
+        for (unsigned i = 0; i < 7; i++) std::cout << " ";
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::UP, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::UP, row, col)) << " ";
         }
-        cout << "\n";
+        std::cout << "\n";
     }
 
-    cout << "\n";
+    std::cout << "\n";
 
     for (int row = 0; row <= 2; row++) {
 
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::LEFT, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::LEFT, row, col)) << " ";
         }
-        cout << " ";
+        std::cout << " ";
 
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::FRONT, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::FRONT, row, col)) << " ";
         }
-        cout << " ";
+        std::cout << " ";
 
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::RIGHT, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::RIGHT, row, col)) << " ";
         }
-        cout << " ";
+        std::cout << " ";
 
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::BACK, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::BACK, row, col)) << " ";
         }
-        cout << "\n";
+        std::cout << "\n";
     }
 
-    cout << "\n";
+    std::cout << "\n";
 
     for (int row = 0; row <= 2; row++) {
-        for (unsigned i = 0; i < 7; i++) cout << " ";
+        for (unsigned i = 0; i < 7; i++) std::cout << " ";
         for (int col = 0; col <= 2; col++) {
-            cout << getColorLetter(getColor(FACE::DOWN, row, col)) << " ";
+            std::cout << getColorLetter(getColor(FACE::DOWN, row, col)) << " ";
         }
-        cout << "\n";
+        std::cout << "\n";
     }
-    cout << "\n";
+    std::cout << "\n";
 }
 
-vector<RubiksCube::MOVE> RubiksCube::randomShuffleCube(unsigned int times) {
-    vector<MOVE> moves_performed;
+std::vector<RubiksCube::MOVE> RubiksCube::randomShuffleCube(unsigned int times) {
+    std::vector<MOVE> moves_performed;
     srand(time(0));
     for (unsigned int i = 0; i < times; i++) {
         unsigned int selectMove = (rand() % 18);
@@ -217,8 +217,8 @@ vector<RubiksCube::MOVE> RubiksCube::randomShuffleCube(unsigned int times) {
 }
 
 //Helper function returns string of corner
-string RubiksCube::getCornerColorString(uint8_t ind) const {
-    string str = "";
+std::string RubiksCube::getCornerColorString(uint8_t ind) const {
+    std::string str = "";
 
     switch (ind) {
 //        UFR
@@ -281,7 +281,7 @@ string RubiksCube::getCornerColorString(uint8_t ind) const {
 }
 
 uint8_t RubiksCube::getCornerIndex(uint8_t ind) const {
-    string corner = getCornerColorString(ind);
+    std::string corner = getCornerColorString(ind);
 
     uint8_t ret = 0;
     for (auto c: corner) {
@@ -308,9 +308,9 @@ uint8_t RubiksCube::getCornerIndex(uint8_t ind) const {
 }
 
 uint8_t RubiksCube::getCornerOrientation(uint8_t ind) const {
-    string corner = getCornerColorString(ind);
+    std::string corner = getCornerColorString(ind);
 
-    string actual_str = "";
+    std::string actual_str = "";
 
     for (auto c: corner) {
         if (c != 'W' && c != 'Y') continue;

@@ -1,11 +1,12 @@
 #include "CornerPatternDatabase.h"
+#include <array>
 
 CornerPatternDatabase::CornerPatternDatabase() : PatternDatabase(100179840) {}
 
 CornerPatternDatabase::CornerPatternDatabase(uint8_t init_val) : PatternDatabase(100179840, init_val) {}
 
 uint32_t CornerPatternDatabase::getDatabaseIndex(const RubiksCube &cube) const {
-    array<uint8_t, 8> cornerPerm =
+    std::array<uint8_t, 8> cornerPerm =
             {
         cube.getCornerIndex(0),
         cube.getCornerIndex(1),
@@ -19,7 +20,7 @@ uint32_t CornerPatternDatabase::getDatabaseIndex(const RubiksCube &cube) const {
 
     uint32_t rank = this->permIndexer.rank(cornerPerm);
 
-    array<uint8_t, 7> cornerOrientations = {
+    std::array<uint8_t, 7> cornerOrientations = {
         cube.getCornerOrientation(0),
         cube.getCornerOrientation(1),
         cube.getCornerOrientation(2),

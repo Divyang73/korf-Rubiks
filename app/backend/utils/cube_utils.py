@@ -51,14 +51,6 @@ def pycuber_cube_to_state(cube: pc.Cube) -> str:
     return "".join(out)
 
 
-def state_to_pycuber_cube(cube_state: str) -> pc.Cube:
-    # PyCuber does not expose a direct setter from 54-char string.
-    # For MVP we keep solved->scramble transformations and use string-only flows.
-    if cube_state == SOLVED_CUBE_STATE:
-        return pc.Cube()
-    raise ValueError("Direct arbitrary state-to-pycuber conversion is not supported")
-
-
 def random_scramble(depth: int = 10, seed: int | None = None) -> ScrambleResult:
     rng = random.Random(seed)
     base_faces = ["R", "L", "U", "D", "F", "B"]

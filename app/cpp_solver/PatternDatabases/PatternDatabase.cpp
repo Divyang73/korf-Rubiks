@@ -1,7 +1,5 @@
 #include "PatternDatabase.h"
 
-using namespace std;
-
 PatternDatabase::PatternDatabase(const size_t size) :
         database(size, 0xFF), size(size), numItems(0) {
 }
@@ -53,9 +51,9 @@ bool PatternDatabase::isFull() const {
     return this->numItems == this->size;
 }
 
-void PatternDatabase::toFile(const string &filePath) const {
+void PatternDatabase::toFile(const std::string &filePath) const {
 
-    ofstream writer(filePath, ios::out | ios::binary | ios::trunc);
+    std::ofstream writer(filePath, std::ios::out | std::ios::binary | std::ios::trunc);
 
     if(!writer.is_open())
         throw "Failed to open the file to write";
@@ -71,8 +69,8 @@ void PatternDatabase::toFile(const string &filePath) const {
 // Returns true of database is loaded successfully
 // else return false
 
-bool PatternDatabase::fromFile(const string &filePath) {
-    ifstream reader(filePath, ios::in | ios::ate);
+bool PatternDatabase::fromFile(const std::string &filePath) {
+    std::ifstream reader(filePath, std::ios::in | std::ios::ate);
 
     if(!reader.is_open())
         return false;
@@ -84,7 +82,7 @@ bool PatternDatabase::fromFile(const string &filePath) {
         throw "Database corrupt! Failed to open Reader";
     }
 
-    reader.seekg(0, ios::beg);
+    reader.seekg(0, std::ios::beg);
     reader.read(
             reinterpret_cast<char*> (this->database.data()),
             this->database.storageSize()
@@ -94,8 +92,8 @@ bool PatternDatabase::fromFile(const string &filePath) {
     return true;
 }
 
-vector<uint8_t> PatternDatabase::inflate() const {
-    vector<uint8_t> inflated;
+std::vector<uint8_t> PatternDatabase::inflate() const {
+    std::vector<uint8_t> inflated;
     this->database.inflate(inflated);
     return inflated;
 }
